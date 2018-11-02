@@ -19,6 +19,6 @@ module.exports = {
       }
     ],
   },
-  target: "ts-node",
+  target: "node",
   devtool: "source-map"
 };
