@@ -1,21 +1,24 @@
 //external
-import {createReadStream} from "fs";
+import { createReadStream, createWriteStream, WriteStream } from 'fs';
 //internal
-import { sizeOfInt, sizeOfRecord } from '../../constants'
+import { sizeOfInt, sizeOfRecord, numbersInRecord } from '../../constants'
+import { Record } from '../Record';
 
 export class File {
-    private position: number;
+    private readPosition: number;
+    private writePosition: number;
 
     constructor(readonly path: string){
-        this.position = 0;
+        this.readPosition = 0;
+        this.writePosition = 0;
     }
 
     public readRecord = async () => {
-        const recordArray: Int32Array = new Int32Array(5);
+        const recordArray: Int32Array = new Int32Array(numbersInRecord);
         const buffer: Buffer = await this.getDataBuffer();
 
-        for(let i = 0; i < 5; i++) {
-            recordArray[i] = buffer.readInt32LE(i* sizeOfInt);
+        for(let i = 0; i < numbersInRecord; i++) {
+            recordArray[i] = buffer.readInt32LE(i * sizeOfInt);
         }
 
         return recordArray;
@@ -23,14 +26,23 @@ export class File {
 
     private getDataBuffer = ():Promise<Buffer> => (
         new Promise((resolve) => {
-                const readable = createReadStream(this.path, {start: this.position, end: this.position + sizeOfRecord});
+                const readable = createReadStream(this.path, {start: this.readPosition, end: this.readPosition + sizeOfRecord});
 
-                this.position += sizeOfRecord;
+                this.readPosition += sizeOfRecord;
                 readable.on('readable', () => {
                     resolve(readable.read(sizeOfRecord));
                 });
             }
         )
-    )
+    );
+
+    public writeRecord = (record: Record) => {
+        const buffer = Buffer.from(record.getRecordAsInt32Array().buffer);
+        this.getWritable().write(buffer)
+    };
+
+    private getWritable = (): WriteStream =>
+     createWriteStream(this.path, {start: this.writePosition});
+
 
 }
