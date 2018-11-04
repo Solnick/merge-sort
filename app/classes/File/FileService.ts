@@ -14,9 +14,9 @@ export class FileService {
 
     constructor() {
         this.dataService = new DataService(undefined);
-        this.inputFile = new File('./unsortedInput');
-        this.firstFile = new File('./firstFile');
-        this.secondFile = new File('./secondFile');
+        this.inputFile = new File('./unsortedInput', 0);
+        this.firstFile = new File('./firstFile', 1);
+        this.secondFile = new File('./secondFile', 2);
     };
 
     public generateFileToSort = async () => {
