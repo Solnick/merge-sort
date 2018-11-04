@@ -26,13 +26,11 @@ export class FileService {
             if (err) throw err;
             console.log('The "data to append" was appended to file!');
         });
-        // readFile('./unsortedInput', (err, buffer) => {
-        //     if (err) throw err;
-        //     let i = 0;
-        //     console.log('The "data to append" was appended to file!', buffer.readInt32LE(0),buffer.readInt32LE(i+=4), buffer.readInt32LE(i+=4));
-        // });
         const record = await this.inputFile.readRecord();
         console.log('rec', record)
+        this.firstFile.writeRecord(record);
+        const rec2 = await this.firstFile.readRecord();
+        console.log('rec2', rec2)
     };
 
 }
