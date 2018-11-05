@@ -50,7 +50,7 @@ export class SortService {
                 newPreviousFirstFileRecord,
                 newPreviousSecondFileRecord,
                 smallerRecord
-            } = await this.selectSmallerRecordAndGetNewOne({
+            } = await this.selectSmallerRecordAndGetNewOne({//TODO: handle series ends in one of the files
                     currentFirstFileRecord,
                     currentSecondFileRecord,
                     previousFirstFileRecord,
