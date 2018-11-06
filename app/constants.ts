@@ -6,4 +6,7 @@ export const enum events {
     EOF,
     SWITCH_FILE,
     SERIES_IN_FIRST_FILE_END,
+    SERIES_IN_SECOND_FILE_END,
+    FIRST_FILE_EOF,
+    SORTING_ENDS
 }

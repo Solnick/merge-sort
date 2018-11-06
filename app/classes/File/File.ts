@@ -27,6 +27,9 @@ export class File {
         const recordArray: Int32Array = new Int32Array(numbersInRecord);
         const buffer: Buffer = await this.getDataBuffer();
 
+        if(buffer === null){
+            return null;
+        }
         for(let i = 0; i < numbersInRecord; i++) {
             recordArray[i] = buffer.readInt32LE(i * sizeOfInt);
             if(recordArray[i] === null){
