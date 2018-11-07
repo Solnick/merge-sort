@@ -30,11 +30,11 @@ export class DataService {
 
     private generateRecord = () => {
       return new Record(
-          Math.ceil(Math.random() * 1000),
-          Math.ceil(Math.random() * 1000),
-          Math.ceil(Math.random() * 1000),
-          Math.ceil(Math.random() * 1000),
-          Math.ceil(Math.random() * 1000)
+          Math.ceil(Math.random() * 10),
+          Math.ceil(Math.random() * 10),
+          Math.ceil(Math.random() * 10),
+          Math.ceil(Math.random() * 10),
+          Math.ceil(Math.random() * 10)
       );
     };
 }

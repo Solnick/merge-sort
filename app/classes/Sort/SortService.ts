@@ -42,8 +42,17 @@ export class SortService {
 
     public sort = async() => {
         while(await this.divide() !== events.SORTING_ENDS){
-            this.merge();
+            this.firstFile.setNewReadable();
+            this.secondFile.setNewReadable();
+            this.inputFile.setNewWritable();
+            await this.merge();
+            this.inputFile.setNewReadable();
+            this.firstFile.setNewWritable();
+            this.secondFile.setNewWritable();
+
+            await this.inputFile.printFile();
         }
+        await this.inputFile.printFile();
     };
 
     private finishSeries = async (fileID: number, readedRecord: Record) => {
@@ -53,7 +62,13 @@ export class SortService {
         let fileEnd: events;
 
         this.inputFile.writeRecord(readedRecord);
-
+        if(!currentRecord){//EOF
+            return {
+                firstFileRecord: null,
+                secondFileRecord: null,
+                event: events.EOF,
+            }
+        }
         while(previousRecord.getValue() < currentRecord.getValue()){
             this.inputFile.writeRecord(currentRecord);
             previousRecord = currentRecord;
@@ -75,22 +90,31 @@ export class SortService {
         const smallerRecord = this.selectSmallerRecord(newState.currentFirstFileRecord, newState.currentSecondFileRecord);
 
         if(smallerRecord === newState.currentFirstFileRecord){
-            const fetchedRecord = await this.firstFile.readRecord();
-
+            const fetchedRecord = await this.firstFile.readRecord();//unhandled EOF
+            if(fetchedRecord === null){
+                return {
+                    ...newState,
+                    smallerRecord,
+                    firstFileEnds: true
+                }
+            }
             if(fetchedRecord.getValue() < newState.currentFirstFileRecord.getValue()){//series in first file ends
                 newState.firstFileSeriesEnds = true;
-                newState.currentFirstFileRecord = fetchedRecord;
-                return newState;
             }
             newState.previousFirstFileRecord = newState.currentFirstFileRecord;
             newState.currentFirstFileRecord = fetchedRecord;
         }else if(smallerRecord === newState.currentSecondFileRecord){
             const fetchedRecord = await this.secondFile.readRecord();
+            if(fetchedRecord === null){
+                return {
+                    ...newState,
+                    smallerRecord,
+                    secondFileEnds: true
+                }
+            }
 
             if(fetchedRecord.getValue() < newState.currentSecondFileRecord.getValue()){//series in first file ends
                 newState.secondFileSeriesEnds = true;
-                newState.currentSecondFileRecord = fetchedRecord;
-                return newState;
             }
             newState.previousSecondFileRecord = newState.currentSecondFileRecord;
             newState.currentSecondFileRecord = fetchedRecord;
@@ -106,6 +130,8 @@ export class SortService {
         const state = {
             firstFileSeriesEnds: false,
             secondFileSeriesEnds: false,
+            firstFileEnds: false,
+            secondFileEnds: false,
             previousFirstFileRecord: null,
             previousSecondFileRecord: null,
             currentFirstFileRecord: await this.firstFile.readRecord(),
@@ -115,25 +141,43 @@ export class SortService {
         let sortingEvent: SortingEvent;
 
         while(true){
-            Object.assign(state, await this.selectSmallerRecordAndGetNewOne({ ...state }));
-            this.inputFile.writeRecord(state.smallerRecord);// TODO: end debug, handle new file write
-            if(state.firstFileSeriesEnds){
+            Object.assign(state, await this.selectSmallerRecordAndGetNewOne({ ...state }));//unhandled EOF
+            this.inputFile.writeRecord(state.smallerRecord);
+            if(state.firstFileEnds){
+                //fill With rest of SecondFile
+                this.inputFile.writeRecord(state.currentSecondFileRecord);
+                this.fillWithRestOfRecords(this.secondFile);
+                break;//merge ends
+            }else if(state.secondFileEnds){
+                //fill With rest of FirstFile
+                this.inputFile.writeRecord(state.currentFirstFileRecord);
+                this.fillWithRestOfRecords(this.firstFile);
+                break;//merge ends
+            }else if(state.firstFileSeriesEnds){
                 sortingEvent = await this.finishSeries(this.secondFile.id, state.currentSecondFileRecord);// if !EOF then sortingEvent got current record from secondFile
                 if(sortingEvent.event === events.EOF){
-                    this.fillWithRestOfRecords(this.firstFile);
+                    if(state.currentFirstFileRecord){
+                        this.inputFile.writeRecord(state.currentFirstFileRecord);
+                    }
+                    await this.fillWithRestOfRecords(this.firstFile);
                     break;//merge ends
                 }
                 state.currentSecondFileRecord = sortingEvent.secondFileRecord;
-                state.currentFirstFileRecord = await this.firstFile.readRecord();
+                //state.currentFirstFileRecord = await this.firstFile.readRecord();
             }else if(state.secondFileSeriesEnds){
-                sortingEvent = await this.finishSeries(this.secondFile.id, state.currentSecondFileRecord);// if !EOF then sortingEvent got current record from firstFile
+                sortingEvent = await this.finishSeries(this.firstFile.id, state.currentFirstFileRecord);// if !EOF then sortingEvent got current record from firstFile
                 if(sortingEvent.event === events.EOF){
-                    this.fillWithRestOfRecords(this.secondFile);
+                    if(state.currentSecondFileRecord){
+                        this.inputFile.writeRecord(state.currentSecondFileRecord);
+                    }
+                    await this.fillWithRestOfRecords(this.secondFile);
                     break;//merge ends
                 }
                 state.currentFirstFileRecord = sortingEvent.firstFileRecord;
-                state.currentSecondFileRecord = await this.secondFile.readRecord()
+                //state.currentSecondFileRecord = await this.secondFile.readRecord()
             }
+            state.secondFileSeriesEnds = false;
+            state.firstFileSeriesEnds = false;
         }
     };
 
@@ -149,12 +193,14 @@ export class SortService {
 
     private divide = async () => {
         let switchingCount = 0;
+        this.currentFile = this.firstFile;
+        this.currentRecord = undefined;
 
         while(await this.writeSeries() !== events.EOF){
             this.switchFile();
             switchingCount++;
         }
-        if(switchingCount === 0){
+        if(switchingCount === 0){//?
             return events.SORTING_ENDS;
         }
     };
@@ -173,11 +219,11 @@ export class SortService {
                 previous = current;
                 current = await this.inputFile.readRecord();
                 if(current === null){
-                    resolve(events.EOF)
+                    resolve(events.EOF);
                 }
             }
             this.currentRecord = current;
-            resolve(events.SWITCH_FILE)
+            resolve(events.SWITCH_FILE);
         })
     );
 

@@ -27,38 +27,10 @@ export class FileService {
                 resolve();
             });
         });
-    private sleep(time){
-        return new Promise((resolve, reject) => {
-            if(time){
-                setTimeout(() => {
-                    resolve();
-                }, time);
-            } else {
-                reject("Time needs to be an integer");
-            }
-        })
-    }
+
     public generateFileToSort = async () => {
         const data: Int32Array = this.dataService.getDataAsInt32Array();
         console.log(data);
         await this.fillFileWithRecords(data);
-
-        const record = await this.inputFile.readRecord();
-        console.log('rec', record);
-        this.firstFile.writeRecord(record);
-
-        const record2 = await this.inputFile.readRecord();
-        console.log('rec', record2);
-        this.firstFile.writeRecord(record2);
-
-        const rec2 = await this.firstFile.readRecord();
-        console.log('rec2', rec2);
-
-        const rec3 = await this.firstFile.readRecord();
-        console.log('rec2', rec3);
-
-        const rec4 = await this.firstFile.readRecord();
-        console.log('rec2', rec4);
-    };
-
+    }
 }

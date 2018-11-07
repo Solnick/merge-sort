@@ -1,4 +1,7 @@
-import { FileService } from './classes/File/FileService';
+import {SortService} from './classes/Sort/SortService';
 
-const fileService = new FileService();
-fileService.generateFileToSort();
+(async function main() {
+    const sortService = new SortService();
+    await sortService.generateFileToSort();
+    await sortService.sort();
+})();

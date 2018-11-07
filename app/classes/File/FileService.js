@@ -1,6 +1,6 @@
 "use strict";
 exports.__esModule = true;
-var DataService_1 = require("./DataService");
+var DataService_1 = require("../DataService");
 var fs_1 = require("fs");
 var FileService = /** @class */ (function () {
     function FileService() {
