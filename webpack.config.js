@@ -4,6 +4,10 @@ module.exports = {
   entry: {
     bundle: './app/index.ts'
   },
+  mode: 'development',
+  optimization: {
+    minimize: false
+  },
   output: {
     filename: 'build.js'
   },
@@ -20,5 +24,5 @@ module.exports = {
     ],
   },
   target: "node",
-  devtool: "source-map"
+  devtool: "inline-source-map"
 };

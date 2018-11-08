@@ -5,7 +5,7 @@ import {Buffer} from 'buffer';
 import {DataService} from '../DataService';
 import {File} from '../File/File';
 import {Record} from '../Record';
-import {events} from '../../constants';
+import {events, dataArray} from '../../constants';
 import {SortingEvent} from './SortingEvent';
 
 
@@ -20,7 +20,8 @@ export class SortService {
     private filesArray: File[];
 
     constructor() {
-        this.dataService = new DataService(undefined);
+        this.dataService = new DataService(dataArray.map((obj)=> new Record(obj.a, obj.c, obj.x, obj.y, obj.z)));
+        //this.dataService = new DataService(undefined);
         this.inputFile = new File('./unsortedInput', 0);
         this.firstFile = new File('./firstFile', 1);
         this.currentFile = this.firstFile;
@@ -34,24 +35,33 @@ export class SortService {
 
     public generateFileToSort = async () => {
         const data: Int32Array = this.dataService.getDataAsInt32Array();
-        writeFile('./unsortedInput', Buffer.from(data.buffer), (err) => {
-            if (err) throw err;
-            console.log('The "data to append" was appended to file!');
-        });
+
+        return new Promise((resolve, reject) => {
+            writeFile('./unsortedInput', Buffer.from(data.buffer), (err) => {
+                if (err) {
+                    reject(err);
+                }
+                resolve()
+            });
+        })
     };
 
     public sort = async() => {
+        await this.inputFile.printFile();
+        let phaseNum = 0;
         while(await this.divide() !== events.SORTING_ENDS){
+            phaseNum++;
             this.firstFile.setNewReadable();
             this.secondFile.setNewReadable();
             this.inputFile.setNewWritable();
             await this.merge();
+            console.log('phaseNum', phaseNum);
+            await this.inputFile.printFile();
             this.inputFile.setNewReadable();
             this.firstFile.setNewWritable();
             this.secondFile.setNewWritable();
-
-            await this.inputFile.printFile();
         }
+
         await this.inputFile.printFile();
     };
 
@@ -69,7 +79,7 @@ export class SortService {
                 event: events.EOF,
             }
         }
-        while(previousRecord.getValue() < currentRecord.getValue()){
+        while(previousRecord && currentRecord && (previousRecord.getValue() < currentRecord.getValue())){
             this.inputFile.writeRecord(currentRecord);
             previousRecord = currentRecord;
             currentRecord = await sourceFile.readRecord();
@@ -98,6 +108,7 @@ export class SortService {
                     firstFileEnds: true
                 }
             }
+
             if(fetchedRecord.getValue() < newState.currentFirstFileRecord.getValue()){//series in first file ends
                 newState.firstFileSeriesEnds = true;
             }
@@ -213,13 +224,15 @@ export class SortService {
             this.currentFile.writeRecord(previous);
             if(current === null){
                 resolve(events.EOF);
+                return;
             }
-            while(previous.getValue() < current.getValue()){
+            while(previous && current && (previous.getValue() < current.getValue())){
                 this.currentFile.writeRecord(current);
                 previous = current;
                 current = await this.inputFile.readRecord();
                 if(current === null){
                     resolve(events.EOF);
+                    break;
                 }
             }
             this.currentRecord = current;
