@@ -20,8 +20,8 @@ export class SortService {
     private filesArray: File[];
 
     constructor() {
-        this.dataService = new DataService(dataArray.map((obj)=> new Record(obj.a, obj.c, obj.x, obj.y, obj.z)));
-        //this.dataService = new DataService(undefined);
+        //this.dataService = new DataService(dataArray.map((obj)=> new Record(obj.a, obj.c, obj.x, obj.y, obj.z)));
+        this.dataService = new DataService(undefined);
         this.inputFile = new File('./unsortedInput', 0);
         this.firstFile = new File('./firstFile', 1);
         this.currentFile = this.firstFile;
@@ -55,14 +55,13 @@ export class SortService {
             this.secondFile.setNewReadable();
             this.inputFile.setNewWritable();
             await this.merge();
-            console.log('phaseNum', phaseNum);
-            await this.inputFile.printFile();
             this.inputFile.setNewReadable();
             this.firstFile.setNewWritable();
             this.secondFile.setNewWritable();
         }
 
         await this.inputFile.printFile();
+        console.log('phaseNum =', phaseNum);
     };
 
     private finishSeries = async (fileID: number, readedRecord: Record) => {
@@ -71,7 +70,7 @@ export class SortService {
         let previousRecord: Record = readedRecord;
         let fileEnd: events;
 
-        this.inputFile.writeRecord(readedRecord);
+        await this.inputFile.writeRecord(readedRecord);
         if(!currentRecord){//EOF
             return {
                 firstFileRecord: null,
@@ -80,7 +79,7 @@ export class SortService {
             }
         }
         while(previousRecord && currentRecord && (previousRecord.getValue() < currentRecord.getValue())){
-            this.inputFile.writeRecord(currentRecord);
+            await this.inputFile.writeRecord(currentRecord);
             previousRecord = currentRecord;
             currentRecord = await sourceFile.readRecord();
             if(currentRecord === null){
@@ -153,22 +152,22 @@ export class SortService {
 
         while(true){
             Object.assign(state, await this.selectSmallerRecordAndGetNewOne({ ...state }));//unhandled EOF
-            this.inputFile.writeRecord(state.smallerRecord);
+            await this.inputFile.writeRecord(state.smallerRecord);
             if(state.firstFileEnds){
                 //fill With rest of SecondFile
-                this.inputFile.writeRecord(state.currentSecondFileRecord);
-                this.fillWithRestOfRecords(this.secondFile);
+                await this.inputFile.writeRecord(state.currentSecondFileRecord);
+                await this.fillWithRestOfRecords(this.secondFile);
                 break;//merge ends
             }else if(state.secondFileEnds){
                 //fill With rest of FirstFile
-                this.inputFile.writeRecord(state.currentFirstFileRecord);
-                this.fillWithRestOfRecords(this.firstFile);
+                await this.inputFile.writeRecord(state.currentFirstFileRecord);
+                await this.fillWithRestOfRecords(this.firstFile);
                 break;//merge ends
             }else if(state.firstFileSeriesEnds){
                 sortingEvent = await this.finishSeries(this.secondFile.id, state.currentSecondFileRecord);// if !EOF then sortingEvent got current record from secondFile
                 if(sortingEvent.event === events.EOF){
                     if(state.currentFirstFileRecord){
-                        this.inputFile.writeRecord(state.currentFirstFileRecord);
+                        await this.inputFile.writeRecord(state.currentFirstFileRecord);
                     }
                     await this.fillWithRestOfRecords(this.firstFile);
                     break;//merge ends
@@ -179,7 +178,7 @@ export class SortService {
                 sortingEvent = await this.finishSeries(this.firstFile.id, state.currentFirstFileRecord);// if !EOF then sortingEvent got current record from firstFile
                 if(sortingEvent.event === events.EOF){
                     if(state.currentSecondFileRecord){
-                        this.inputFile.writeRecord(state.currentSecondFileRecord);
+                        await this.inputFile.writeRecord(state.currentSecondFileRecord);
                     }
                     await this.fillWithRestOfRecords(this.secondFile);
                     break;//merge ends
@@ -195,7 +194,7 @@ export class SortService {
     private fillWithRestOfRecords = async (file: File) => {
         let currentRecord = await file.readRecord();
         while(currentRecord){
-            this.inputFile.writeRecord(currentRecord);
+            await this.inputFile.writeRecord(currentRecord);
             currentRecord = await file.readRecord();
         }
     };

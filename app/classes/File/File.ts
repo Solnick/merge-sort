@@ -6,14 +6,12 @@ import { Record } from '../Record';
 
 export class File {
     private readPosition: number;
-    private writePosition: number;
     private writable: WriteStream;
     private writeCount: number;
     private readCount: number;
 
     constructor(readonly path: string, readonly id: number){
         this.readPosition = 0;
-        this.writePosition = 0;
         this.readCount = 0;
         this.writeCount = 0;
         this.writable = createWriteStream(this.path);
@@ -47,7 +45,7 @@ export class File {
         let i = 0;
         await this.setNewReadable();
         console.log('printFILE');
-        while(record = await this.readRecord()){
+        while(record = await this.readRecord(true)){
            // console.log(record);
             console.log(i++, record.getValue());
         }
@@ -58,10 +56,12 @@ export class File {
         console.log();
     };
 
-    public readRecord = async () => {
+    public readRecord = async (isPrinting: boolean = false) => {
         const recordArray: Int32Array = new Int32Array(numbersInRecord);
         const buffer: Buffer = await this.getDataBuffer();
-        this.readCount++;
+        if(!isPrinting) {
+            this.readCount++;
+        }
 
         if(buffer === null){
             this.readPosition = 0;
@@ -91,13 +91,16 @@ export class File {
     );
 
     public writeRecord = (record: Record) => {
-        if(!record){
-            console.log(record);
-        }
-        this.writeCount++;
-        const buffer = Buffer.from(record.getRecordAsInt32Array().buffer);
-        this.writable.write(buffer);
-        this.writePosition += sizeOfRecord;
+        return new Promise((resolve) => {
+            if(!record){
+                console.log(record);
+            }
+            this.writeCount++;
+            const buffer = Buffer.from(record.getRecordAsInt32Array().buffer);
+            this.writable.write(buffer, '', () => {
+                resolve();
+            });
+        })
     };
 
     public setNewWritable = (): void => {
