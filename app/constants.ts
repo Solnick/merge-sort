@@ -1,4 +1,4 @@
-export const numberOfRecordsToGenerate = 180;
+export const numberOfRecordsToGenerate = 14;
 export const sizeOfRecord = 20;
 export const sizeOfInt = 4;
 export const numbersInRecord = 5;
@@ -10,7 +10,8 @@ export const enum events {
     FIRST_FILE_EOF,
     SORTING_ENDS
 }
-export const dataArray = [
+export const showFileAfterEveryPhase = true;
+export let dataArray; /*= [
     {
         "a": 10,
         "c": 5,
@@ -109,4 +110,4 @@ export const dataArray = [
         "y": 10,
         "z": 5
     }
-];
+];*/

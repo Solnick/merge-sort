@@ -5,9 +5,8 @@ import {Buffer} from 'buffer';
 import {DataService} from '../DataService';
 import {File} from '../File/File';
 import {Record} from '../Record';
-import {events, dataArray} from '../../constants';
+import {events, dataArray, showFileAfterEveryPhase} from '../../constants';
 import {SortingEvent} from './SortingEvent';
-
 
 export class SortService {
     private dataService: DataService;
@@ -20,8 +19,8 @@ export class SortService {
     private filesArray: File[];
 
     constructor() {
-        //this.dataService = new DataService(dataArray.map((obj)=> new Record(obj.a, obj.c, obj.x, obj.y, obj.z)));
-        this.dataService = new DataService(undefined);
+        const recordsArray = dataArray && dataArray.map((obj)=> new Record(obj.a, obj.c, obj.x, obj.y, obj.z));
+        this.dataService = new DataService(recordsArray);
         this.inputFile = new File('./unsortedInput', 0);
         this.firstFile = new File('./firstFile', 1);
         this.currentFile = this.firstFile;
@@ -58,6 +57,10 @@ export class SortService {
             this.inputFile.setNewReadable();
             this.firstFile.setNewWritable();
             this.secondFile.setNewWritable();
+            if(showFileAfterEveryPhase){
+                console.log('phaseNum =', phaseNum);
+                await this.inputFile.printFile();
+            }
         }
 
         await this.inputFile.printFile();
