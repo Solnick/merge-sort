@@ -53,6 +53,12 @@ export class SortService {
             this.firstFile.setNewReadable();
             this.secondFile.setNewReadable();
             this.inputFile.setNewWritable();
+            if(showFileAfterEveryPhase){
+                console.log('firstFile\n');
+                await this.firstFile.printFile();
+                console.log('secondFile\n');
+                await this.secondFile.printFile()
+            }
             await this.merge();
             this.inputFile.setNewReadable();
             this.firstFile.setNewWritable();
@@ -213,7 +219,7 @@ export class SortService {
             this.switchFile();
             switchingCount++;
         }
-        if(switchingCount === 0){//?
+        if(switchingCount === 0){
             return events.SORTING_ENDS;
         }
     };
@@ -223,13 +229,13 @@ export class SortService {
             let previous: Record = this.currentRecord || await this.inputFile.readRecord();
             let current: Record = await this.inputFile.readRecord();
 
-            this.currentFile.writeRecord(previous);
+            await this.currentFile.writeRecord(previous);
             if(current === null){
                 resolve(events.EOF);
                 return;
             }
             while(previous && current && (previous.getValue() < current.getValue())){
-                this.currentFile.writeRecord(current);
+                await this.currentFile.writeRecord(current);
                 previous = current;
                 current = await this.inputFile.readRecord();
                 if(current === null){
