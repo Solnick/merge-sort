@@ -3,7 +3,7 @@ import {writeFile} from 'fs';
 import {Buffer} from 'buffer';
 //internal
 import {DataService} from '../DataService';
-import {File} from '../File/File';
+import {File} from '../File';
 import {Record} from '../Record';
 import {events, dataArray, showFileAfterEveryPhase} from '../../constants';
 import {SortingEvent} from './SortingEvent';

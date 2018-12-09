@@ -1,4 +1,5 @@
 export const numberOfRecordsToGenerate = 14;
+export const numberOfRecordsOnPage = 3;
 export const sizeOfRecord = 20;
 export const sizeOfInt = 4;
 export const numbersInRecord = 5;
