@@ -47,11 +47,12 @@ export class SortService {
 
     public sort = async() => {
         await this.inputFile.printFile();
+        await this.inputFile.setNewReadable();
         let phaseNum = 0;
         while(await this.divide() !== events.SORTING_ENDS){
             phaseNum++;
-            this.firstFile.setNewReadable();
-            this.secondFile.setNewReadable();
+            await this.firstFile.setNewReadable();
+            await this.secondFile.setNewReadable();
             this.inputFile.setNewWritable();
             if(showFileAfterEveryPhase){
                 console.log('firstFile\n');
@@ -60,7 +61,7 @@ export class SortService {
                 await this.secondFile.printFile()
             }
             await this.merge();
-            this.inputFile.setNewReadable();
+            await this.inputFile.setNewReadable();
             this.firstFile.setNewWritable();
             this.secondFile.setNewWritable();
             if(showFileAfterEveryPhase){

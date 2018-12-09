@@ -64,8 +64,8 @@ export class File {
         this.writable = createWriteStream(this.path);
     };
 
-    public setNewReadable = (): void => {
-        this.readPosition = 0;
+    public setNewReadable = async () => {
+        await this.readBufferManager.setNewReadableStream();
     };
 
     public readRecord = async (isPrinting: boolean = false) => {

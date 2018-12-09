@@ -44,6 +44,11 @@ export class ReadBufferManager {
         return this.initializeRecord(recordArray);
     };
 
+    public async setNewReadableStream() {
+        this.positionInBuffer = 0;
+        this.readPosition = 0;
+        this.readBuffer = await this.getNewReadBuffer();
+    }
     private getNewReadBuffer = async () => {
         const buffer: Buffer = await this.getDataBuffer();
 
