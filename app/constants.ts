@@ -1,5 +1,5 @@
 export const numberOfRecordsToGenerate = 14;
-export const numberOfRecordsOnPage = 3;
+export const numberOfRecordsOnPage = 4;
 export const sizeOfRecord = 20;
 export const sizeOfInt = 4;
 export const numbersInRecord = 5;
@@ -12,7 +12,7 @@ export const enum events {
     SORTING_ENDS
 }
 export const showFileAfterEveryPhase = true;
-export let dataArray; /*= [
+export let dataArray;/* = [
     {
         "a": 10,
         "c": 5,

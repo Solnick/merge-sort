@@ -1,7 +1,7 @@
 // external
 import { createReadStream, createWriteStream, WriteStream } from 'fs';
 // internal
-import { sizeOfInt, sizeOfRecord, numbersInRecord, numberOfRecordsOnPage } from '../../constants'
+import { sizeOfInt, sizeOfRecord, numbersInRecord, numberOfRecordsOnPage, numberOfRecordsToGenerate } from '../../constants'
 import { Record } from '../Record';
 
 export class ReadBufferManager {
@@ -17,13 +17,20 @@ export class ReadBufferManager {
      };
 
     public async readRecord() {
+        // if(this.readPosition >= numberOfRecordsToGenerate*sizeOfRecord){
+        //     return null;
+        // }
         const recordArray: Int32Array = new Int32Array(numbersInRecord);
         if(this.positionInBuffer === numberOfRecordsOnPage) {
             this.readBuffer = await this.getNewReadBuffer();
             this.positionInBuffer = 0;
         }
         const baseOffset = sizeOfRecord*this.positionInBuffer;
-
+        if(!this.readBuffer || baseOffset >= this.readBuffer.length){
+            this.readPosition = 0;
+            this.positionInBuffer = 0;
+            return null;
+        }
         for(let i = 0; i < numbersInRecord; i++) {
             if(!this.readBuffer){
                 this.readBuffer = await this.getNewReadBuffer();
@@ -69,6 +76,7 @@ export class ReadBufferManager {
                     });
 
                 this.readPosition += sizeOfRecord*numberOfRecordsOnPage;
+
                 readable.on('readable', () => {
                     resolve(readable.read(sizeOfRecord*numberOfRecordsOnPage));
                 });

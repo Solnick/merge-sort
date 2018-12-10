@@ -47,13 +47,12 @@ export class SortService {
 
     public sort = async() => {
         await this.inputFile.printFile();
-        await this.inputFile.setNewReadable();
         let phaseNum = 0;
         while(await this.divide() !== events.SORTING_ENDS){
             phaseNum++;
             await this.firstFile.setNewReadable();
             await this.secondFile.setNewReadable();
-            this.inputFile.setNewWritable();
+            await this.inputFile.setNewWritable();
             if(showFileAfterEveryPhase){
                 console.log('firstFile\n');
                 await this.firstFile.printFile();
@@ -62,8 +61,8 @@ export class SortService {
             }
             await this.merge();
             await this.inputFile.setNewReadable();
-            this.firstFile.setNewWritable();
-            this.secondFile.setNewWritable();
+            await this.firstFile.setNewWritable();
+            await this.secondFile.setNewWritable();
             if(showFileAfterEveryPhase){
                 console.log('phaseNum =', phaseNum);
                 await this.inputFile.printFile();
@@ -199,6 +198,9 @@ export class SortService {
             state.secondFileSeriesEnds = false;
             state.firstFileSeriesEnds = false;
         }
+        await this.firstFile.setNewReadable();
+        await this.secondFile.setNewReadable();
+        await this.inputFile.closeFileBuffer();
     };
 
     private fillWithRestOfRecords = async (file: File) => {
@@ -220,6 +222,8 @@ export class SortService {
             this.switchFile();
             switchingCount++;
         }
+        await this.firstFile.closeFileBuffer();
+        await this.secondFile.closeFileBuffer();
         if(switchingCount === 0){
             return events.SORTING_ENDS;
         }

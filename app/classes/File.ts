@@ -4,13 +4,15 @@ import { createReadStream, createWriteStream, WriteStream } from 'fs';
 import { sizeOfInt, sizeOfRecord, numbersInRecord } from '../constants'
 import { Record } from './Record';
 import { ReadBufferManager } from './BufferManager/ReadBufferManager';
+import { WriteBufferManager } from './BufferManager/WriteBufferManager';
 
 export class File {
     private readPosition: number;
     private writable: WriteStream;
     private writeCount: number;
-    private readCount: number;
-    private readBufferManager: ReadBufferManager
+    private readonly readCount: number;
+    private readBufferManager: ReadBufferManager;
+    private writeBufferManager: WriteBufferManager;
 
     constructor(readonly path: string, readonly id: number){
         this.readPosition = 0;
@@ -18,6 +20,7 @@ export class File {
         this.writeCount = 0;
         this.writable = createWriteStream(this.path);
         this.readBufferManager = new ReadBufferManager(this.path);
+        this.writeBufferManager = new WriteBufferManager(this.path);
     }
 
     public printFile = async() => {
@@ -34,6 +37,7 @@ export class File {
         console.log('number of writes', this.writeCount);
         console.log('printEND');
         console.log();
+        await this.setNewReadable();
     };
 
     // public searchForRecord = async(array: number[]) => {
@@ -46,22 +50,28 @@ export class File {
     //     return false;
     // };
 
-    public writeRecord = (record: Record) => {
-        return new Promise((resolve) => {
-            if(!record){
-                console.log(record);
-            }
-            this.writeCount++;
-            const buffer = Buffer.from(record.getRecordAsInt32Array().buffer);
-            //writeBufferManager below
-            this.writable.write(buffer, '', () => {
-                resolve();
-            });
-        })
+    public writeRecord = async (record: Record) => {
+        await this.writeBufferManager.writeRecord(record);
+        // return new Promise((resolve) => {
+        //     if(!record){
+        //         console.log(record);
+        //     }
+        //     this.writeCount++;
+        //     const buffer = Buffer.from(record.getRecordAsInt32Array().buffer);
+        //     //writeBufferManager below
+        //     this.writable.write(buffer, '', () => {
+        //         resolve();
+        //     });
+        // })
     };
 
-    public setNewWritable = (): void => {
-        this.writable = createWriteStream(this.path);
+    public closeFileBuffer = async () => {
+        await this.writeBufferManager.pushRecordsToFile();
+    };
+
+    public setNewWritable = async () => {
+        await this.writeBufferManager.setNewWritable();
+        //this.writable = createWriteStream(this.path);
     };
 
     public setNewReadable = async () => {
