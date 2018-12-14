@@ -15,6 +15,8 @@ export class WriteBufferManager {
         this.recordsToSave = new Array<Record>();
     };
 
+    public getNumOfWrites = () => this.writeCount;
+
     public async writeRecord(record: Record) {
         await this.saveRecord(record);
     }
@@ -37,6 +39,7 @@ export class WriteBufferManager {
 
     public pushRecordsToFile() {
         return new Promise((resolve => {
+            this.writeCount++;
             this.recordsToSave.forEach((record) => {
                 record.getRecordAsArray().forEach((num) => {
                         this.flatRecordsArray.push(num);

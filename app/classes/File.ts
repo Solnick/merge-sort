@@ -33,8 +33,8 @@ export class File {
             console.log(i++, record.getValue());
         }
 
-        console.log('number of reads', this.readCount);
-        console.log('number of writes', this.writeCount);
+        console.log('number of reads', this.readBufferManager.getNumOfReads());
+        console.log('number of writes', this.writeBufferManager.getNumOfWrites());
         console.log('printEND');
         console.log();
         await this.setNewReadable();

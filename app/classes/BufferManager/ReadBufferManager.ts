@@ -8,14 +8,17 @@ export class ReadBufferManager {
     private readPosition: number;
     private readBuffer: Buffer;
     private positionInBuffer; number;
+    public numberOfReads: number;
 
     constructor(readonly path: string) {
         this.readPosition = 0;
         this.positionInBuffer = 0;
+        this.numberOfReads = 0;
         this.getNewReadBuffer()
             .then(buff => this.readBuffer = buff);
      };
 
+    public getNumOfReads = () => this.numberOfReads;
     public async readRecord() {
         // if(this.readPosition >= numberOfRecordsToGenerate*sizeOfRecord){
         //     return null;
@@ -68,20 +71,20 @@ export class ReadBufferManager {
 
     private getDataBuffer = ():Promise<Buffer> => (
         new Promise((resolve) => {
-                const readable = createReadStream(
-                    this.path,
-                    {
-                        start: this.readPosition,
-                        end: this.readPosition + sizeOfRecord*numberOfRecordsOnPage
-                    });
-
-                this.readPosition += sizeOfRecord*numberOfRecordsOnPage;
-
-                readable.on('readable', () => {
-                    resolve(readable.read(sizeOfRecord*numberOfRecordsOnPage));
+            this.numberOfReads++;
+            const readable = createReadStream(
+                this.path,
+                {
+                    start: this.readPosition,
+                    end: this.readPosition + sizeOfRecord*numberOfRecordsOnPage
                 });
-            }
-        )
+
+            this.readPosition += sizeOfRecord*numberOfRecordsOnPage;
+
+            readable.on('readable', () => {
+                resolve(readable.read(sizeOfRecord*numberOfRecordsOnPage));
+            });
+        })
     );
 
     private initializeRecord = (recordArray: Int32Array) => {
