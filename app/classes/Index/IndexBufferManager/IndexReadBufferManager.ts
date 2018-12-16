@@ -7,11 +7,12 @@ import {
     numbersInRecord,
     numberOfRecordsOnPage,
     numberOfRecordsToGenerate,
-    sizeOfPage
-} from '../../constants'
-import { Record } from '../Record';
+    numbersInIndexRecord, sizeOfIndexRecord
+} from '../../../constants'
+import { IndexRecord } from '../IndexRecord';
+import {Record} from '../../Record';
 
-export class ReadBufferManager {
+export class IndexReadBufferManager {
     private readPosition: number;
     private readBuffer: Buffer;
     private positionInBuffer; number;
@@ -28,23 +29,19 @@ export class ReadBufferManager {
      };
 
     public getNumOfReads = () => this.numberOfReads;
-
     public async readRecord() {
-        // if(this.readPosition >= numberOfRecordsToGenerate*sizeOfRecord){
-        //     return null;
-        // }
-        const recordArray: Int32Array = new Int32Array(numbersInRecord);
+        const recordArray: Int32Array = new Int32Array(numbersInIndexRecord);
         if(this.positionInBuffer === numberOfRecordsOnPage) {
             this.readBuffer = await this.getNewReadBuffer();
             this.positionInBuffer = 0;
         }
-        const baseOffset = sizeOfRecord*this.positionInBuffer;
+        const baseOffset = sizeOfIndexRecord*this.positionInBuffer;
         if(!this.readBuffer || baseOffset >= this.readBuffer.length){
             this.readPosition = 0;
             this.positionInBuffer = 0;
             return null;
         }
-        for(let i = 0; i < numbersInRecord; i++) {
+        for(let i = 0; i < numbersInIndexRecord; i++) {
             if(!this.readBuffer){
                 this.readBuffer = await this.getNewReadBuffer();
             }
@@ -61,23 +58,8 @@ export class ReadBufferManager {
             }
         }
         this.positionInBuffer++;
-        return this.initializeRecord(recordArray);
+        return this.initializeIndexRecord(recordArray);
     };
-
-    public readPage(pageNum): Promise<Buffer> {
-        const offset = sizeOfPage * (pageNum - 1);
-        return new Promise((resolve) => {
-            const readable = createReadStream(
-                this.path,
-                {
-                    start: offset,
-                    end: offset + sizeOfRecord*numberOfRecordsOnPage
-                });
-            readable.on('readable', () => {
-                resolve(readable.read(sizeOfRecord*numberOfRecordsOnPage));
-            });
-        })
-    }
 
     public async setNewReadableStream() {
         this.positionInBuffer = 0;
@@ -103,25 +85,21 @@ export class ReadBufferManager {
                 this.path,
                 {
                     start: this.readPosition,
-                    end: this.readPosition + sizeOfRecord*numberOfRecordsOnPage
+                    end: this.readPosition + sizeOfIndexRecord*numberOfRecordsOnPage
                 });
 
-            this.readPosition += sizeOfRecord*numberOfRecordsOnPage;
+            this.readPosition += sizeOfIndexRecord*numberOfRecordsOnPage;
 
             readable.on('readable', () => {
-                resolve(readable.read(sizeOfRecord*numberOfRecordsOnPage));
+                resolve(readable.read(sizeOfIndexRecord*numberOfRecordsOnPage));
             });
         })
     );
 
-    private initializeRecord = (recordArray: Int32Array) => {
-        return new Record(
+    private initializeIndexRecord = (recordArray: Int32Array) => {
+        return new IndexRecord(
             recordArray[0],
-            recordArray[1],
-            recordArray[2],
-            recordArray[3],
-            recordArray[4],
-            recordArray[5],
+            recordArray[1]
         )
     };
 }

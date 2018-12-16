@@ -5,6 +5,7 @@ import { sizeOfInt, sizeOfRecord, numbersInRecord } from '../constants'
 import { Record } from './Record';
 import { ReadBufferManager } from './BufferManager/ReadBufferManager';
 import { WriteBufferManager } from './BufferManager/WriteBufferManager';
+import {IndexRecord} from './Index/IndexRecord';
 
 export class File {
     private readPosition: number;
@@ -23,6 +24,10 @@ export class File {
         this.writeBufferManager = new WriteBufferManager(this.path);
     }
 
+    public getCurrentPage() {
+        return this.readBufferManager.currentPage;
+    }
+
     public printFile = async() => {
         let record: Record;
         let i = 0;
@@ -32,13 +37,38 @@ export class File {
             // console.log(record);
             console.log(i++, record.getValue());
         }
-
         console.log('number of reads', this.readBufferManager.getNumOfReads());
         console.log('number of writes', this.writeBufferManager.getNumOfWrites());
         console.log('printEND');
         console.log();
         await this.setNewReadable();
     };
+
+    public printNumberOfOperations() {
+        console.log(`number of reads: ${this.readBufferManager.getNumOfReads()}`);
+        console.log(`number of writes: ${this.writeBufferManager.getNumOfWrites()}`);
+    }
+
+    public async printRecordsAndKeys() {
+        let record: Record;
+        let i = 0;
+        await this.setNewReadable();
+        console.log('printFILE');
+        while(record = await this.readRecord(true)){
+            const recordArray = record.getRecordAsArray();
+            console.log(i++);
+            console.log(`a=${recordArray[0]}
+c=${recordArray[1]}
+x=${recordArray[2]}
+y=${recordArray[3]}
+z=${recordArray[4]}
+key=${recordArray[5]}
+        `);
+        }
+        console.log('printEND');
+        console.log();
+        await this.setNewReadable();
+    }
 
     // public searchForRecord = async(array: number[]) => {
     //     let record: Record;
@@ -52,18 +82,20 @@ export class File {
 
     public writeRecord = async (record: Record) => {
         await this.writeBufferManager.writeRecord(record);
-        // return new Promise((resolve) => {
-        //     if(!record){
-        //         console.log(record);
-        //     }
-        //     this.writeCount++;
-        //     const buffer = Buffer.from(record.getRecordAsInt32Array().buffer);
-        //     //writeBufferManager below
-        //     this.writable.write(buffer, '', () => {
-        //         resolve();
-        //     });
-        // })
     };
+
+    public appendRecord = async (record: Record) => {
+        await this.writeBufferManager.appendRecord(record);
+    };
+
+    public closeAppendBuffer = async () => {
+        await this.writeBufferManager.appendRecordsToFile();
+    };
+
+    public async readPage(pageNum): Promise<Buffer> {
+        await this.readBufferManager.setNewReadableStream();
+        return await this.readBufferManager.readPage(pageNum);
+    }
 
     public closeFileBuffer = async () => {
         await this.writeBufferManager.pushRecordsToFile();
@@ -71,7 +103,6 @@ export class File {
 
     public setNewWritable = async () => {
         await this.writeBufferManager.setNewWritable();
-        //this.writable = createWriteStream(this.path);
     };
 
     public setNewReadable = async () => {
@@ -80,26 +111,6 @@ export class File {
 
     public readRecord = async (isPrinting: boolean = false) => {
         return await this.readBufferManager.readRecord();
-        // const recordArray: Int32Array = new Int32Array(numbersInRecord);
-        // // read Buffer below
-        // const buffer: Buffer = await this.getDataBuffer();
-        // if(!isPrinting) {
-        //     this.readCount++;
-        // }
-        //
-        // if(buffer === null){
-        //     this.readPosition = 0;
-        //     return null;
-        // }
-        // for(let i = 0; i < numbersInRecord; i++) {
-        //     recordArray[i] = buffer.readInt32LE(i * sizeOfInt);
-        //     if(recordArray[i] === null){
-        //         this.readPosition = 0;
-        //         return null;
-        //     }
-        // }
-        //
-        // return this.initializeRecord(recordArray);
     };
 
     private initializeRecord = (recordArray: Int32Array) => {
@@ -108,22 +119,12 @@ export class File {
             recordArray[1],
             recordArray[2],
             recordArray[3],
-            recordArray[4]
+            recordArray[4],
+            recordArray[5],
         )
     };
 
     private static compareArrays = (array1, array2) =>
         array1.length === array2.length && array1.sort().every(function(value, index) { return value === array2.sort()[index]});
 
-    private getDataBuffer = ():Promise<Buffer> => (
-        new Promise((resolve) => {
-                const readable = createReadStream(this.path, {start: this.readPosition, end: this.readPosition + sizeOfRecord});
-
-                this.readPosition += sizeOfRecord;
-                readable.on('readable', () => {
-                    resolve(readable.read(sizeOfRecord));
-                });
-            }
-        )
-    );
 }

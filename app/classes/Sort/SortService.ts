@@ -19,7 +19,7 @@ export class SortService {
     private filesArray: File[];
 
     constructor() {
-        const recordsArray = dataArray && dataArray.map((obj)=> new Record(obj.a, obj.c, obj.x, obj.y, obj.z));
+        const recordsArray = dataArray && dataArray.map((obj)=> new Record(obj.a, obj.c, obj.x, obj.y, obj.z, Math.ceil(Math.random() * 10000)));
         this.dataService = new DataService(recordsArray);
         this.inputFile = new File('./unsortedInput', 0);
         this.firstFile = new File('./firstFile', 1);

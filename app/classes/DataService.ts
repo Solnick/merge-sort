@@ -34,7 +34,8 @@ export class DataService {
           Math.ceil(Math.random() * 10),
           Math.ceil(Math.random() * 10),
           Math.ceil(Math.random() * 10),
-          Math.ceil(Math.random() * 10)
+          Math.ceil(Math.random() * 10),
+          Math.ceil(Math.random() * 10000),
       );
     };
 }
